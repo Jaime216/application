@@ -1,0 +1,636 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --bg: #08111f;
+  --bg-2: #0f1a2f;
+  --panel: rgba(10, 18, 33, 0.88);
+  --line: rgba(143, 173, 255, 0.18);
+  --text: #edf3ff;
+  --muted: #9cb0d1;
+  --accent: #78d4ff;
+  --accent-2: #7ef0c0;
+  --danger: #ff7a93;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(120, 212, 255, 0.18), transparent 32%),
+    radial-gradient(circle at top right, rgba(126, 240, 192, 0.12), transparent 24%),
+    linear-gradient(180deg, var(--bg), var(--bg-2));
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  color: #06101f;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  padding: 0.85rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+}
+
+code,
+pre {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  min-height: 220px;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.hero,
+.panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+}
+
+.hero {
+  border-radius: 28px;
+  padding: 1.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 5vw, 4.3rem);
+  line-height: 1;
+  margin-bottom: 0.9rem;
+  max-width: 11ch;
+}
+
+.lede,
+.panel-header p,
+.empty,
+.notice,
+.endpoint-list,
+.item-card span,
+.item-card small {
+  color: var(--muted);
+}
+
+.api-row,
+.form,
+.status-grid,
+.two-col {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.modules-row {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.module-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  padding: 1rem;
+  border-radius: 12px;
+  width: 220px;
+  cursor: pointer;
+}
+
+.module-card.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.slot-box .class-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 6px;
+}
+
+.slot-box .class-item button {
+  background: transparent;
+  color: var(--danger);
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+
+.slot-box .empty {
+  color: var(--muted);
+}
+
+.api-row {
+  grid-template-columns: 120px 1fr auto;
+  align-items: end;
+  margin-top: 1.25rem;
+}
+
+.status-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.panel {
+  border-radius: 24px;
+  padding: 1.25rem;
+}
+
+.panel-header {
+  margin-bottom: 1rem;
+}
+
+.form {
+  grid-template-columns: 1fr auto;
+}
+
+.endpoint-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.two-col {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+}
+
+.notice {
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  min-height: 66px;
+}
+
+.notice.error {
+  color: #ffd4dd;
+  border-color: rgba(255, 122, 147, 0.35);
+  background: rgba(255, 122, 147, 0.08);
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.kanban-column {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.8rem;
+  min-height: 320px;
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.kanban-column-header h3 {
+  margin: 0;
+}
+
+.kanban-column-header span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.kanban-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.kanban-task-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.75rem;
+}
+
+.kanban-task-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.kanban-task-meta {
+  margin: 0.4rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.subject-pill {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  flex: 0 0 auto;
+}
+
+.kanban-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.kanban-actions button {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.mini-toast {
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(126, 240, 192, 0.5);
+  background: rgba(126, 240, 192, 0.12);
+  color: #c9ffe9;
+  width: fit-content;
+}
+
+.grades-table-wrap {
+  overflow-x: auto;
+}
+
+.grades-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.grades-table th,
+.grades-table td {
+  text-align: left;
+  padding: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.grades-table th {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+.grade-subject-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.grade-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 260px;
+}
+
+.grade-input-row input {
+  max-width: 110px;
+}
+
+.grade-input-row button {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.78rem;
+}
+
+.create-task-form {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 520px;
+}
+
+.create-task-form label {
+  margin-top: 0.35rem;
+}
+
+.field-error {
+  margin: 0.1rem 0 0.35rem;
+  color: #ff9fb0;
+  font-size: 0.85rem;
+}
+
+.field-success {
+  margin: 0.1rem 0 0.35rem;
+  color: #bfffe5;
+  font-size: 0.85rem;
+}
+
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.subject-manager {
+  display: grid;
+  gap: 1rem;
+}
+
+.subject-form {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 620px;
+}
+
+.subject-form-actions,
+.subject-card-actions,
+.subject-list-header {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.subject-list-header {
+  justify-content: space-between;
+}
+
+.subject-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.subject-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.subject-card.selected {
+  border-color: rgba(120, 212, 255, 0.65);
+  box-shadow: 0 0 0 1px rgba(120, 212, 255, 0.25) inset;
+}
+
+.subject-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subject-card p {
+  margin: 0.45rem 0 0.8rem;
+  color: var(--muted);
+}
+
+.color-picker {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.color-picker-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  padding: 0;
+  min-width: 24px;
+}
+
+.color-swatch.selected {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(120, 212, 255, 0.45);
+}
+
+.color-picker-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-picker-input input[type='color'] {
+  width: 44px;
+  height: 34px;
+  border-radius: 8px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: transparent;
+}
+
+.ghost-button {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.danger-button {
+  background: rgba(255, 122, 147, 0.15);
+  border: 1px solid rgba(255, 122, 147, 0.45);
+  color: #ffdbe3;
+}
+
+.education-dashboard-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dashboard-card-average {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.average-big {
+  margin: 0.35rem 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  font-weight: 800;
+  color: var(--accent-2);
+}
+
+.dashboard-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dashboard-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dashboard-list li small {
+  color: var(--muted);
+}
+
+.dashboard-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0;
+}
+
+.education-calendar-wrap {
+  height: 620px;
+}
+
+.education-calendar-wrap .rbc-calendar,
+.education-calendar-wrap .rbc-month-view,
+.education-calendar-wrap .rbc-time-view,
+.education-calendar-wrap .rbc-agenda-view table {
+  color: var(--text);
+}
+
+.education-calendar-wrap .rbc-toolbar {
+  margin-bottom: 0.8rem;
+}
+
+.education-calendar-wrap .rbc-toolbar button {
+  color: var(--text);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.education-calendar-wrap .rbc-toolbar button.rbc-active,
+.education-calendar-wrap .rbc-toolbar button:active,
+.education-calendar-wrap .rbc-toolbar button:focus {
+  background: rgba(120, 212, 255, 0.2);
+  border-color: rgba(120, 212, 255, 0.45);
+  color: var(--text);
+}
+
+.education-calendar-wrap .rbc-month-view,
+.education-calendar-wrap .rbc-time-view,
+.education-calendar-wrap .rbc-agenda-view table {
+  border-color: var(--line);
+}
+
+.education-calendar-wrap .rbc-header,
+.education-calendar-wrap .rbc-day-bg,
+.education-calendar-wrap .rbc-timeslot-group,
+.education-calendar-wrap .rbc-time-header-content,
+.education-calendar-wrap .rbc-time-content,
+.education-calendar-wrap .rbc-agenda-view table tbody > tr > td {
+  border-color: var(--line);
+}
+
+.education-calendar-wrap .rbc-off-range-bg {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.education-calendar-wrap .rbc-today {
+  background: rgba(120, 212, 255, 0.1);
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* removed items-list and item-card styles (test scaffolding) */
+
+@media (max-width: 860px) {
+  .api-row,
+  .status-grid,
+  .two-col,
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
+
+  .education-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .education-calendar-wrap {
+    height: 520px;
+  }
+}
