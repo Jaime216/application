@@ -6,24 +6,28 @@ Formato: cada entrada indica la versión, fecha y lista de cambios importantes.
 
 ## [Unreleased]
 - Fecha: en progreso
+- Autenticación y sesión:
+  - `POST /auth/login` emite JWT con usuario demo o usuario real.
+  - `GET /auth/me` recupera la sesión activa desde el token Bearer.
+  - `frontend/src/App.jsx` guarda el token en `localStorage` y restaura la sesión al recargar.
+  - `backend/scripts/seed.js` crea el usuario demo `alumno@spa.app` / `Estudio123!`.
 - Backend (Educación + seguridad):
-  - Endpoint de desarrollo `POST /auth/dev-token` para emitir JWT de pruebas sin flujo de login.
   - Endpoints protegidos con JWT para `/education/dashboard`, `/education/subjects`, `/education/tasks`, `/education/exams`.
   - CRUD de asignaturas (`GET/POST/PATCH/DELETE`) con ownership por `userId`.
   - CRUD parcial de tareas y exámenes (`GET/POST/PATCH`) con ownership por `userId`.
   - Validación de payloads con Zod (`createTaskSchema`, `createExamSchema`, `createSubjectSchema`, `updateSubjectSchema`).
+  - Endpoint legado `POST /auth/dev-token` mantenido como compatibilidad de prueba.
 - Frontend (módulo Educación):
-  - `Education` añade botón `Generar token dev` para obtener y aplicar JWT automáticamente desde la UI.
+  - `Education` consume `authToken` desde la SPA y ya no depende de token manual.
   - `EducationDashboard` con media global, próximos exámenes, tareas urgentes y estado loading.
   - `EducationCalendar` con `react-big-calendar` y eventos coloreados por asignatura.
   - `SubjectManager` + `ColorPicker` para crear/listar/editar/borrar asignaturas.
-  - Integración de `CreateTaskForm`, `SchoolTaskKanban` y `GradesQuickEntry` con soporte de token JWT opcional.
-  - Pantalla `Educación` ampliada con entrada de JWT y refresco de tareas/exámenes desde backend.
+  - Integración de `CreateTaskForm`, `SchoolTaskKanban` y `GradesQuickEntry` con soporte de sesión autenticada.
+  - Pantalla `Educación` ampliada con acceso protegido y refresco de tareas/exámenes desde backend.
 - Infra/documentación:
-  - `backend/scripts/seed.js` para poblar SQLite+Mongo con datos de prueba completos (schedules, subjects, tasks, exams) y generar JWT de test.
-  - `backend/src/mongoose.js` y arranque en `backend/src/server.js` para conectar MongoDB antes de levantar el servidor.
-  - `backend/package.json` agrega script `npm run seed`.
-  - README actualizado con arquitectura híbrida SQLite+MongoDB, rutas actuales y flujo de uso desde UI.
+  - `backend/scripts/seed.js` para poblar SQLite+Mongo con datos de prueba completos (schedules, subjects, tasks, exams) y credenciales demo.
+  - `backend/package.json` incluye `bcryptjs` para el hash de contraseñas.
+  - README actualizado con login real, rutas actuales y flujo de uso desde UI.
   - Build de frontend validado tras cambios (`npm run build --prefix frontend`).
 
 ## [0.1.0] - 2026-05-27

@@ -66,9 +66,15 @@ const updateSubjectSchema = z
   })
   .refine((data) => Object.keys(data).length > 0, 'at least one field is required');
 
+const loginSchema = z.object({
+  email: z.string().trim().email('email must be valid'),
+  password: z.string().min(6, 'password must have at least 6 characters'),
+});
+
 module.exports = {
   createTaskSchema,
   createExamSchema,
   createSubjectSchema,
   updateSubjectSchema,
+  loginSchema,
 };

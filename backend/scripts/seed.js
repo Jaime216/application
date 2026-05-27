@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const {
   initializeDatabase,
@@ -8,7 +9,7 @@ const {
   createSchedule,
   deleteSchedule,
 } = require('../src/db');
-const { Subject, Task, Exam } = require('../src/models');
+const { Subject, Task, Exam, User } = require('../src/models');
 const { connectMongo } = require('../src/mongoose');
 
 function loadEnvFile() {
@@ -121,6 +122,10 @@ async function seed() {
     throw new Error('JWT_SECRET is required in backend/.env');
   }
 
+  const demoEmail = process.env.AUTH_SEED_EMAIL || 'alumno@spa.app';
+  const demoPassword = process.env.AUTH_SEED_PASSWORD || 'Estudio123!';
+  const demoName = process.env.AUTH_SEED_NAME || 'Alumno demo';
+
   const seedUserObjectId = new mongoose.Types.ObjectId('6654f0000000000000000001');
   const seedUserId = seedUserObjectId.toString();
 
@@ -139,10 +144,20 @@ async function seed() {
   await connectMongo();
 
   await Promise.all([
+    User.deleteOne({ email: demoEmail }),
     Subject.deleteMany({ userId: seedUserId }),
     Task.deleteMany({ userId: seedUserObjectId }),
     Exam.deleteMany({ userId: seedUserObjectId }),
   ]);
+
+  const passwordHash = await bcrypt.hash(demoPassword, 10);
+  const demoUser = await User.create({
+    _id: seedUserObjectId,
+    name: demoName,
+    email: demoEmail,
+    passwordHash,
+    role: 'student',
+  });
 
   const subjects = await Subject.insertMany([
     { userId: seedUserId, name: 'Matemáticas', color: '#4f46e5', teacher: 'Laura Gómez' },
@@ -226,6 +241,10 @@ async function seed() {
 
   const output = {
     seededUserId: seedUserId,
+    demoLogin: {
+      email: demoUser.email,
+      password: demoPassword,
+    },
     jwtToken: token,
     schedules: seededSchedules.length,
     subjects: subjects.length,
@@ -235,7 +254,10 @@ async function seed() {
 
   console.log('✅ Seed completado');
   console.log(JSON.stringify(output, null, 2));
-  console.log('\nÚsalo en la UI como Bearer token o en curl:');
+  console.log('\nLogin de demo:');
+  console.log(`email: ${demoUser.email}`);
+  console.log(`password: ${demoPassword}`);
+  console.log('\nTambién puedes usar el JWT en curl:');
   console.log(`curl -H "Authorization: Bearer ${token}" http://localhost:${process.env.PORT || 3001}/education/dashboard`);
 
   await mongoose.connection.close();

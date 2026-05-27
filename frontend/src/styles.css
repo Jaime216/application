@@ -92,6 +92,60 @@ pre {
   padding: 1.5rem;
 }
 
+.auth-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 420px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.auth-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.auth-card label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.auth-hint {
+  color: var(--muted);
+}
+
+.hero-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.session-pill {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 200px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.session-pill span {
+  font-weight: 700;
+}
+
+.session-pill small {
+  color: var(--muted);
+}
+
+.auth-api-row {
+  grid-template-columns: 120px 1fr auto;
+}
+
 .eyebrow {
   margin: 0 0 0.5rem;
   letter-spacing: 0.18em;
@@ -306,6 +360,13 @@ h1 {
   width: fit-content;
 }
 
+.mini-toast-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .grades-table-wrap {
   overflow-x: auto;
 }
@@ -494,6 +555,13 @@ h1 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.dashboard-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
 .dashboard-card {
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -513,6 +581,84 @@ h1 {
   line-height: 1;
   font-weight: 800;
   color: var(--accent-2);
+}
+
+.dashboard-kpi {
+  margin: 0.25rem 0;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  line-height: 1;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.dashboard-mini-stats {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.dashboard-mini-stats span,
+.roadmap-meta span {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.dashboard-roadmap {
+  margin: 0.8rem 0 1rem;
+}
+
+.dashboard-roadmap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.dashboard-roadmap-list li {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.roadmap-index {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #07111f;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.roadmap-content {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.roadmap-content small,
+.roadmap-meta small {
+  color: var(--muted);
+}
+
+.roadmap-meta {
+  display: grid;
+  justify-items: end;
+  gap: 0.15rem;
 }
 
 .dashboard-list {
@@ -620,6 +766,15 @@ h1 {
   .two-col,
   .form {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-header-row,
+  .dashboard-roadmap-list li {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header-row {
+    flex-direction: column;
   }
 
   .kanban-board {

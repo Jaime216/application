@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const defaultApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -43,10 +43,20 @@ export default function SchoolTaskKanban({
   const [localTasks, setLocalTasks] = useState(tasks);
   const [updatingTaskId, setUpdatingTaskId] = useState(null);
   const [error, setError] = useState('');
+  const [undoState, setUndoState] = useState(null);
+  const deletionTimerRef = useRef(null);
 
   useEffect(() => {
     setLocalTasks(tasks);
   }, [tasks]);
+
+  useEffect(() => {
+    return () => {
+      if (deletionTimerRef.current) {
+        clearTimeout(deletionTimerRef.current);
+      }
+    };
+  }, []);
 
   const groupedTasks = useMemo(() => {
     const grouped = {
@@ -106,17 +116,7 @@ export default function SchoolTaskKanban({
     }
   }, [apiUrl, applyStatusChange, localTasks, onTasksChange]);
 
-  const deleteTask = useCallback(async (taskId) => {
-    if (!taskId) return;
-    if (!window.confirm('¿Eliminar esta tarea?')) return;
-
-    setError('');
-    const previous = localTasks;
-    const next = previous.filter((task) => String(task.id || task._id) !== String(taskId));
-    setLocalTasks(next);
-    if (onTasksChange) onTasksChange(next);
-    setUpdatingTaskId(taskId);
-
+  const finalizeDeleteTask = useCallback(async (taskId, previousTasks) => {
     try {
       const response = await fetch(`${apiUrl}/education/tasks/${taskId}`, {
         method: 'DELETE',
@@ -129,14 +129,57 @@ export default function SchoolTaskKanban({
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload?.error || 'No se pudo eliminar la tarea');
       }
+
+      setUndoState(null);
     } catch (err) {
-      setLocalTasks(previous);
-      if (onTasksChange) onTasksChange(previous);
+      setLocalTasks(previousTasks);
+      if (onTasksChange) onTasksChange(previousTasks);
       setError(err.message || 'Error eliminando tarea');
+      setUndoState(null);
     } finally {
       setUpdatingTaskId(null);
     }
-  }, [apiUrl, authToken, localTasks, onTasksChange]);
+  }, [apiUrl, authToken, onTasksChange]);
+
+  const undoDeleteTask = useCallback(() => {
+    if (!undoState) return;
+
+    if (deletionTimerRef.current) {
+      clearTimeout(deletionTimerRef.current);
+    }
+
+    setLocalTasks(undoState.previousTasks);
+    if (onTasksChange) onTasksChange(undoState.previousTasks);
+    setError('');
+    setUndoState(null);
+    setUpdatingTaskId(null);
+  }, [onTasksChange, undoState]);
+
+  const deleteTask = useCallback((taskId) => {
+    if (!taskId) return;
+    if (!window.confirm('¿Eliminar esta tarea?')) return;
+
+    setError('');
+    if (deletionTimerRef.current) {
+      clearTimeout(deletionTimerRef.current);
+    }
+
+    const previous = localTasks;
+    const next = previous.filter((task) => String(task.id || task._id) !== String(taskId));
+    setLocalTasks(next);
+    if (onTasksChange) onTasksChange(next);
+    setUpdatingTaskId(taskId);
+
+    setUndoState({
+      kind: 'task',
+      taskId,
+      previousTasks: previous,
+    });
+
+    deletionTimerRef.current = setTimeout(() => {
+      finalizeDeleteTask(taskId, previous);
+    }, 8000);
+  }, [finalizeDeleteTask, localTasks, onTasksChange]);
 
   // Placeholder listo para integrar drag-and-drop externo si se necesita.
   const onDragEnd = useCallback(({ taskId, destinationStatus }) => {
@@ -150,6 +193,13 @@ export default function SchoolTaskKanban({
         <h2>Gestor de tareas</h2>
         <p>Organiza tus entregas en un tablero Kanban.</p>
       </div>
+
+      {undoState ? (
+        <div className="mini-toast mini-toast-undo">
+          <span>Tarea eliminada. Puedes deshacer durante 8 segundos.</span>
+          <button type="button" className="ghost-button" onClick={undoDeleteTask}>Deshacer</button>
+        </div>
+      ) : null}
 
       {error ? <div className="notice error">{error}</div> : null}
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CreateTaskForm from './CreateTaskForm';
 import SubjectManager from './SubjectManager';
 import EducationDashboard from './EducationDashboard';
@@ -21,7 +21,7 @@ function emptySchedule() {
   return sched;
 }
 
-export default function Education({ apiUrl, onBack }) {
+export default function Education({ apiUrl, onBack, authToken, currentUser, onLogout }) {
   const [title, setTitle] = useState('Horario semanal');
   const [schedule, setSchedule] = useState(() => emptySchedule());
   const [newClass, setNewClass] = useState('');
@@ -32,13 +32,12 @@ export default function Education({ apiUrl, onBack }) {
   const [viewingScheduleId, setViewingScheduleId] = useState(null);
   const [taskSubjectId, setTaskSubjectId] = useState('');
   const [taskFeedback, setTaskFeedback] = useState('');
-  const [authToken, setAuthToken] = useState('');
-  const [devTokenLoading, setDevTokenLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [exams, setExams] = useState([]);
   const [educationError, setEducationError] = useState('');
   const [educationLoading, setEducationLoading] = useState(false);
   const [subjectsRefreshKey, setSubjectsRefreshKey] = useState(0);
+  const normalizedAuthToken = authToken.trim();
 
   const subjectColorMap = Object.fromEntries(
     [...tasks, ...exams]
@@ -48,9 +47,9 @@ export default function Education({ apiUrl, onBack }) {
   );
 
   async function loadEducationData(tokenOverride) {
-    const token = (tokenOverride || authToken).trim();
+    const token = (tokenOverride || normalizedAuthToken).trim();
     if (!token) {
-      setEducationError('Añade un JWT para cargar tareas y exámenes');
+      setEducationError('Inicia sesión para cargar tareas y exámenes');
       return;
     }
 
@@ -89,7 +88,7 @@ export default function Education({ apiUrl, onBack }) {
 
   async function refreshAllData(tokenOverride) {
     setEducationError('');
-    const token = (tokenOverride || authToken).trim();
+    const token = (tokenOverride || normalizedAuthToken).trim();
 
     await Promise.allSettled([
       loadSchedules(),
@@ -97,33 +96,6 @@ export default function Education({ apiUrl, onBack }) {
     ]);
 
     setSubjectsRefreshKey((current) => current + 1);
-  }
-
-  async function requestDevToken() {
-    setDevTokenLoading(true);
-    setEducationError('');
-
-    try {
-      const response = await fetch(`${apiUrl}/auth/dev-token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: '6654f0000000000000000001' }),
-      });
-
-      const body = await response.json().catch(() => ({}));
-
-      if (!response.ok || !body?.token) {
-        throw new Error(body?.error || 'No se pudo generar token dev');
-      }
-
-      setAuthToken(body.token);
-      setTaskFeedback('Token dev generado y aplicado en la sesión');
-      await refreshAllData(body.token);
-    } catch (error) {
-      setEducationError(error.message || 'Error generando token dev');
-    } finally {
-      setDevTokenLoading(false);
-    }
   }
 
   async function loadSchedules() {
@@ -226,6 +198,13 @@ export default function Education({ apiUrl, onBack }) {
     }
   }
 
+  useEffect(() => {
+    if (!normalizedAuthToken) return undefined;
+
+    refreshAllData(normalizedAuthToken);
+    return undefined;
+  }, [normalizedAuthToken]);
+
   return (
     <div className="shell">
       <button onClick={onBack} style={{ marginBottom: 12 }}>← Volver</button>
@@ -233,33 +212,29 @@ export default function Education({ apiUrl, onBack }) {
 
       <section className="panel">
         <div className="panel-header">
-          <h2>Acceso API Educación</h2>
-          <p>Usa el token JWT para consultar dashboard, tareas, exámenes y asignaturas.</p>
+          <h2>Sesión activa</h2>
+          <p>Has iniciado sesión para consultar dashboard, tareas, exámenes y asignaturas.</p>
         </div>
 
-        <label htmlFor="education-jwt" style={{ display: 'block', marginBottom: 8 }}>JWT Bearer Token</label>
-        <input
-          id="education-jwt"
-          value={authToken}
-          onChange={(event) => setAuthToken(event.target.value)}
-          placeholder="eyJhbGciOi..."
-          style={{ marginBottom: 10 }}
-        />
+        <div className="session-pill" style={{ marginBottom: 12 }}>
+          <span>{currentUser?.name || 'Usuario autenticado'}</span>
+          <small>{currentUser?.email || 'Sesión activa'}</small>
+        </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" onClick={requestDevToken} disabled={devTokenLoading}>
-            {devTokenLoading ? 'Generando token...' : 'Generar token dev'}
-          </button>
-
           <button type="button" onClick={() => refreshAllData()} disabled={educationLoading}>
             {educationLoading ? 'Cargando...' : 'Refrescar todo'}
+          </button>
+
+          <button type="button" className="ghost-button" onClick={onLogout}>
+            Cerrar sesión
           </button>
         </div>
 
         {educationError ? <p className="field-error" style={{ marginTop: 10 }}>{educationError}</p> : null}
       </section>
 
-      <EducationDashboard apiUrl={apiUrl} authToken={authToken.trim()} />
+      <EducationDashboard apiUrl={apiUrl} authToken={normalizedAuthToken} />
 
       <form onSubmit={submit} className="panel">
         <label style={{ display: 'block', marginBottom: 8 }}>Título</label>
@@ -373,7 +348,7 @@ export default function Education({ apiUrl, onBack }) {
 
         <SubjectManager
           apiUrl={apiUrl}
-          authToken={authToken.trim()}
+          authToken={normalizedAuthToken}
           refreshTrigger={subjectsRefreshKey}
           selectedSubjectId={taskSubjectId}
           onSubjectSelect={(subject) => setTaskSubjectId(subject?._id || '')}
@@ -382,7 +357,7 @@ export default function Education({ apiUrl, onBack }) {
 
       <CreateExamForm
         apiUrl={apiUrl}
-        authToken={authToken.trim()}
+        authToken={normalizedAuthToken}
         subjectId={taskSubjectId}
         onCreated={(exam) => {
           setExams((current) => [exam, ...current]);
@@ -408,7 +383,7 @@ export default function Education({ apiUrl, onBack }) {
 
         <CreateTaskForm
           apiUrl={apiUrl}
-          authToken={authToken.trim()}
+          authToken={normalizedAuthToken}
           subjectId={taskSubjectId.trim()}
           onCreated={(task) => {
             setTaskFeedback(`Tarea creada: ${task?.title || 'sin título'}`);
@@ -420,7 +395,7 @@ export default function Education({ apiUrl, onBack }) {
       <SchoolTaskKanban
         tasks={tasks}
         apiUrl={apiUrl}
-        authToken={authToken.trim()}
+        authToken={normalizedAuthToken}
         subjectColorMap={subjectColorMap}
         onTasksChange={setTasks}
       />
@@ -428,7 +403,7 @@ export default function Education({ apiUrl, onBack }) {
       <GradesQuickEntry
         exams={exams}
         apiUrl={apiUrl}
-        authToken={authToken.trim()}
+        authToken={normalizedAuthToken}
         subjectColorMap={subjectColorMap}
         onSaved={(examId, score) => {
           setExams((current) => current.map((exam) => (

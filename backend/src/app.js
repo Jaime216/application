@@ -5,6 +5,7 @@ const { getEducationDashboard } = require('./controllers/education.controller');
 const { getTasks, createTask, patchTask, deleteTask } = require('./controllers/task.controller');
 const { getExams, createExam, patchExam, deleteExam } = require('./controllers/exam.controller');
 const { getSubjects, createSubject, patchSubject, deleteSubject } = require('./controllers/subject.controller');
+const { login, me } = require('./controllers/auth.controller');
 const { protectRoute } = require('./middleware/protectRoute');
 const { validateRequest } = require('./middleware/validateRequest');
 const { requireMongo } = require('./middleware/requireMongo');
@@ -13,6 +14,7 @@ const {
   createExamSchema,
   createSubjectSchema,
   updateSubjectSchema,
+  loginSchema,
 } = require('./validation/schemas');
 
 initializeDatabase();
@@ -39,7 +41,8 @@ app.get('/', (request, response) => {
     message: 'Backend simple listo',
     endpoints: [
       '/health',
-      '/auth/dev-token',
+      '/auth/login',
+      '/auth/me',
       '/schedules',
       '/education/dashboard',
       '/education/subjects',
@@ -82,6 +85,9 @@ app.post('/auth/dev-token', (req, res) => {
     userId,
   });
 });
+
+app.post('/auth/login', requireMongo, validateRequest(loginSchema), login);
+app.get('/auth/me', requireMongo, protectRoute, me);
 
 // removed test 'items' and 'seed' endpoints
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const defaultApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -44,6 +44,8 @@ export default function GradesQuickEntry({
   const [savingId, setSavingId] = useState('');
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  const [undoState, setUndoState] = useState(null);
+  const deletionTimerRef = useRef(null);
 
   useEffect(() => {
     setRows(exams || []);
@@ -68,6 +70,14 @@ export default function GradesQuickEntry({
     const timer = setTimeout(() => setToast(''), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    return () => {
+      if (deletionTimerRef.current) {
+        clearTimeout(deletionTimerRef.current);
+      }
+    };
+  }, []);
 
   const updateDraft = useCallback((examId, value) => {
     setDraftScores((current) => ({
@@ -152,16 +162,7 @@ export default function GradesQuickEntry({
     }
   }, [apiUrl, draftScores, dateDrafts, authToken, onSaved]);
 
-  const deleteExam = useCallback(async (examId) => {
-    if (!examId) return;
-    if (!window.confirm('¿Eliminar este examen?')) return;
-
-    setError('');
-    const previousRows = rows;
-    const nextRows = previousRows.filter((exam) => getExamId(exam) !== String(examId));
-    setRows(nextRows);
-    setSavingId(String(examId));
-
+  const finalizeDeleteExam = useCallback(async (examId, previousRows) => {
     try {
       const response = await fetch(`${apiUrl}/education/exams/${examId}`, {
         method: 'DELETE',
@@ -187,13 +188,54 @@ export default function GradesQuickEntry({
       });
       setToast('Examen eliminado');
       if (onDeleted) onDeleted(examId);
+      setUndoState(null);
     } catch (err) {
       setRows(previousRows);
       setError(err.message || 'Error eliminando examen');
+      setUndoState(null);
     } finally {
       setSavingId('');
     }
-  }, [apiUrl, authToken, rows, onDeleted]);
+  }, [apiUrl, authToken, onDeleted]);
+
+  const undoDeleteExam = useCallback(() => {
+    if (!undoState) return;
+
+    if (deletionTimerRef.current) {
+      clearTimeout(deletionTimerRef.current);
+    }
+
+    setRows(undoState.previousRows);
+    setError('');
+    setUndoState(null);
+    setSavingId('');
+    setToast('Eliminación cancelada');
+  }, [undoState]);
+
+  const deleteExam = useCallback((examId) => {
+    if (!examId) return;
+    if (!window.confirm('¿Eliminar este examen?')) return;
+
+    setError('');
+    if (deletionTimerRef.current) {
+      clearTimeout(deletionTimerRef.current);
+    }
+
+    const previousRows = rows;
+    const nextRows = previousRows.filter((exam) => getExamId(exam) !== String(examId));
+    setRows(nextRows);
+    setSavingId(String(examId));
+
+    setUndoState({
+      examId,
+      previousRows,
+    });
+
+    setToast('Examen enviado a papelera temporal');
+    deletionTimerRef.current = setTimeout(() => {
+      finalizeDeleteExam(examId, previousRows);
+    }, 8000);
+  }, [finalizeDeleteExam, rows]);
 
   return (
     <section className="panel">
@@ -201,6 +243,13 @@ export default function GradesQuickEntry({
         <h2>Registro rapido de notas</h2>
         <p>Introduce la nota de examenes pasados pendientes de calificacion.</p>
       </div>
+
+      {undoState ? (
+        <div className="mini-toast mini-toast-undo">
+          <span>Examen eliminado temporalmente. Puedes deshacer durante 8 segundos.</span>
+          <button type="button" className="ghost-button" onClick={undoDeleteExam}>Deshacer</button>
+        </div>
+      ) : null}
 
       {toast ? <div className="mini-toast">{toast}</div> : null}
       {error ? <div className="notice error">{error}</div> : null}
