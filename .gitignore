@@ -19,6 +19,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+Mejoras.md
 
 # OS/editor files
 .DS_Store
@@ -43,3 +44,10 @@ tmp/
 temp/
 *.pid
 *.pid.lock
+
+# DataBase
+*.sqlite
+*.sqlite3
+db.db
+db.db-shm
+db.db-wal
