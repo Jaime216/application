@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { User } = require('../models');
+const { findUserByEmail, findUserById } = require('../db');
 
 function buildAuthToken(user) {
   const jwtSecret = process.env.JWT_SECRET;
@@ -11,7 +11,7 @@ function buildAuthToken(user) {
 
   return jwt.sign(
     {
-      userId: user._id.toString(),
+      userId: String(user.id || user._id),
       email: user.email,
       name: user.name,
     },
@@ -34,7 +34,7 @@ async function login(req, res) {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = findUserByEmail(email);
 
     if (!user) {
       return res.status(401).json({
@@ -61,7 +61,7 @@ async function login(req, res) {
       token,
       tokenType: 'Bearer',
       user: {
-        id: user._id.toString(),
+        id: String(user.id || user._id),
         name: user.name,
         email: user.email,
         role: user.role,
@@ -79,7 +79,7 @@ async function login(req, res) {
 
 async function me(req, res) {
   try {
-    const user = await User.findById(req.user.id).lean();
+    const user = findUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({
@@ -92,7 +92,7 @@ async function me(req, res) {
 
     return res.json({
       user: {
-        id: user._id.toString(),
+        id: String(user.id || user._id),
         name: user.name,
         email: user.email,
         role: user.role,

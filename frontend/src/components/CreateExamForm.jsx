@@ -118,7 +118,7 @@ export default function CreateExamForm({ apiUrl, authToken, subjectId = '', onCr
       </select>
 
       <label>Subject ID (manual, opcional)</label>
-      <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="ObjectId de la asignatura" />
+      <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="ID de la asignatura" />
 
       <label>Fecha</label>
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />

@@ -8,7 +8,6 @@ const { getSubjects, createSubject, patchSubject, deleteSubject } = require('./c
 const { login, me } = require('./controllers/auth.controller');
 const { protectRoute } = require('./middleware/protectRoute');
 const { validateRequest } = require('./middleware/validateRequest');
-const { requireMongo } = require('./middleware/requireMongo');
 const {
   createTaskSchema,
   createExamSchema,
@@ -86,8 +85,8 @@ app.post('/auth/dev-token', (req, res) => {
   });
 });
 
-app.post('/auth/login', requireMongo, validateRequest(loginSchema), login);
-app.get('/auth/me', requireMongo, protectRoute, me);
+app.post('/auth/login', validateRequest(loginSchema), login);
+app.get('/auth/me', protectRoute, me);
 
 // removed test 'items' and 'seed' endpoints
 
@@ -158,20 +157,20 @@ app.delete('/schedules/:id', (req, res) => {
   }
 });
 
-app.get('/education/dashboard', requireMongo, protectRoute, getEducationDashboard);
-app.get('/education/subjects', requireMongo, protectRoute, getSubjects);
-app.post('/education/subjects', requireMongo, protectRoute, validateRequest(createSubjectSchema), createSubject);
-app.patch('/education/subjects/:id', requireMongo, protectRoute, validateRequest(updateSubjectSchema), patchSubject);
-app.delete('/education/subjects/:id', requireMongo, protectRoute, deleteSubject);
+app.get('/education/dashboard', protectRoute, getEducationDashboard);
+app.get('/education/subjects', protectRoute, getSubjects);
+app.post('/education/subjects', protectRoute, validateRequest(createSubjectSchema), createSubject);
+app.patch('/education/subjects/:id', protectRoute, validateRequest(updateSubjectSchema), patchSubject);
+app.delete('/education/subjects/:id', protectRoute, deleteSubject);
 
-app.get('/education/tasks', requireMongo, protectRoute, getTasks);
-app.post('/education/tasks', requireMongo, protectRoute, validateRequest(createTaskSchema), createTask);
-app.patch('/education/tasks/:id', requireMongo, protectRoute, patchTask);
-app.delete('/education/tasks/:id', requireMongo, protectRoute, deleteTask);
+app.get('/education/tasks', protectRoute, getTasks);
+app.post('/education/tasks', protectRoute, validateRequest(createTaskSchema), createTask);
+app.patch('/education/tasks/:id', protectRoute, patchTask);
+app.delete('/education/tasks/:id', protectRoute, deleteTask);
 
-app.get('/education/exams', requireMongo, protectRoute, getExams);
-app.post('/education/exams', requireMongo, protectRoute, validateRequest(createExamSchema), createExam);
-app.patch('/education/exams/:id', requireMongo, protectRoute, patchExam);
-app.delete('/education/exams/:id', requireMongo, protectRoute, deleteExam);
+app.get('/education/exams', protectRoute, getExams);
+app.post('/education/exams', protectRoute, validateRequest(createExamSchema), createExam);
+app.patch('/education/exams/:id', protectRoute, patchExam);
+app.delete('/education/exams/:id', protectRoute, deleteExam);
 
 module.exports = app;

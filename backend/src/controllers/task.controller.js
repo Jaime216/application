@@ -1,11 +1,13 @@
-const { Task } = require('../models');
+const {
+  listTasks,
+  createTask: createTaskRecord,
+  updateTask: updateTaskRecord,
+  deleteTask: deleteTaskRecord,
+} = require('../db');
 
 async function getTasks(req, res) {
   try {
-    const tasks = await Task.find({ userId: req.user.id })
-      .sort({ dueDate: 1 })
-      .populate('subject', 'name color teacher')
-      .lean();
+    const tasks = listTasks(req.user.id);
 
     return res.json({ tasks });
   } catch (error) {
@@ -15,10 +17,11 @@ async function getTasks(req, res) {
 
 async function createTask(req, res) {
   try {
-    const task = await Task.create({
-      ...req.body,
-      userId: req.user.id,
-    });
+    const task = createTaskRecord(req.user.id, req.body);
+
+    if (!task) {
+      return res.status(400).json({ error: 'failed to create task' });
+    }
 
     return res.status(201).json({ task });
   } catch (error) {
@@ -37,11 +40,7 @@ async function patchTask(req, res) {
   }
 
   try {
-    const task = await Task.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
-      { $set: updates },
-      { new: true, runValidators: true },
-    );
+    const task = updateTaskRecord(req.params.id, req.user.id, updates);
 
     if (!task) {
       return res.status(404).json({ error: 'task not found' });
@@ -55,16 +54,13 @@ async function patchTask(req, res) {
 
 async function deleteTask(req, res) {
   try {
-    const task = await Task.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id,
-    });
+    const deleted = deleteTaskRecord(req.params.id, req.user.id);
 
-    if (!task) {
+    if (!deleted) {
       return res.status(404).json({ error: 'task not found' });
     }
 
-    return res.json({ deleted: true, id: String(task._id) });
+    return res.json({ deleted: true, id: String(req.params.id) });
   } catch (error) {
     return res.status(500).json({ error: 'failed to delete task' });
   }

@@ -2,15 +2,21 @@ const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const mongoose = require('mongoose');
 const {
   initializeDatabase,
   listSchedules,
   createSchedule,
   deleteSchedule,
+  createUser,
+  deleteUserById,
+  deleteUserByEmail,
+  deleteSubjectsByUser,
+  deleteTasksByUser,
+  deleteExamsByUser,
+  createSubject,
+  createTask,
+  createExam,
 } = require('../src/db');
-const { Subject, Task, Exam, User } = require('../src/models');
-const { connectMongo } = require('../src/mongoose');
 
 function loadEnvFile() {
   const envFilePath = path.join(__dirname, '..', '.env');
@@ -48,30 +54,34 @@ function daysFromNow(days) {
   return date;
 }
 
+function classEntry(name, classroom) {
+  return { name, classroom };
+}
+
 function buildSeedScheduleA() {
   return {
     Lunes: {
-      'Mañana': [['Matemáticas'], ['Historia'], ['Inglés']],
-      Tarde: [['Física'], ['Laboratorio'], ['Lectura']],
+      'Mañana': [[classEntry('Matemáticas', 'Aula 201')], [classEntry('Historia', 'Aula 104')], [classEntry('Inglés', 'Aula 303')]],
+      Tarde: [[classEntry('Física', 'Laboratorio 1')], [classEntry('Laboratorio', 'Lab. de ciencias')], [classEntry('Lectura', 'Biblioteca')]],
     },
     Martes: {
-      'Mañana': [['Programación'], ['Matemáticas'], ['Deporte']],
-      Tarde: [['Química'], ['Tutoría'], ['Proyecto']],
+      'Mañana': [[classEntry('Programación', 'Aula 302')], [classEntry('Matemáticas', 'Aula 201')], [classEntry('Deporte', 'Pabellón')]],
+      Tarde: [[classEntry('Química', 'Laboratorio 2')], [classEntry('Tutoría', 'Sala 1')], [classEntry('Proyecto', 'Aula de trabajo')]],
     },
     Miércoles: {
-      'Mañana': [['Literatura'], ['Biología'], ['Inglés']],
-      Tarde: [['Programación'], ['Estudio libre'], ['Descanso']],
+      'Mañana': [[classEntry('Literatura', 'Aula 105')], [classEntry('Biología', 'Laboratorio 2')], [classEntry('Inglés', 'Aula 303')]],
+      Tarde: [[classEntry('Programación', 'Aula 302')], [classEntry('Estudio libre', 'Biblioteca')], [classEntry('Descanso', 'Casa')]],
     },
     Jueves: {
-      'Mañana': [['Física'], ['Matemáticas'], ['Historia']],
-      Tarde: [['Proyecto'], ['Laboratorio'], ['Repaso']],
+      'Mañana': [[classEntry('Física', 'Laboratorio 1')], [classEntry('Matemáticas', 'Aula 201')], [classEntry('Historia', 'Aula 104')]],
+      Tarde: [[classEntry('Proyecto', 'Aula de trabajo')], [classEntry('Laboratorio', 'Lab. de ciencias')], [classEntry('Repaso', 'Biblioteca')]],
     },
     Viernes: {
-      'Mañana': [['Programación'], ['Inglés'], ['Tutoría']],
-      Tarde: [['Evaluación'], ['Deporte'], ['Planificación']],
+      'Mañana': [[classEntry('Programación', 'Aula 302')], [classEntry('Inglés', 'Aula 303')], [classEntry('Tutoría', 'Sala 1')]],
+      Tarde: [[classEntry('Evaluación', 'Aula 201')], [classEntry('Deporte', 'Pabellón')], [classEntry('Planificación', 'Biblioteca')]],
     },
     Sábado: {
-      'Mañana': [['Proyecto personal'], ['Lectura'], ['Descanso']],
+      'Mañana': [[classEntry('Proyecto personal', 'Casa')], [classEntry('Lectura', 'Biblioteca')], [classEntry('Descanso', 'Casa')]],
       Tarde: [[], [], []],
     },
     Domingo: {
@@ -84,27 +94,27 @@ function buildSeedScheduleA() {
 function buildSeedScheduleB() {
   return {
     Lunes: {
-      'Mañana': [['Álgebra'], ['Inglés B2'], ['Katas']],
-      Tarde: [['Trabajo equipo'], ['Deporte'], []],
+      'Mañana': [[classEntry('Álgebra', 'Aula 210')], [classEntry('Inglés B2', 'Aula 303')], [classEntry('Katas', 'Aula 402')]],
+      Tarde: [[classEntry('Trabajo equipo', 'Sala colaborativa')], [classEntry('Deporte', 'Pabellón')], []],
     },
     Martes: {
-      'Mañana': [['Física'], ['Historia'], ['Base de datos']],
-      Tarde: [['Proyecto final'], [], []],
+      'Mañana': [[classEntry('Física', 'Laboratorio 1')], [classEntry('Historia', 'Aula 104')], [classEntry('Base de datos', 'Aula 402')]],
+      Tarde: [[classEntry('Proyecto final', 'Aula de trabajo')], [], []],
     },
     Miércoles: {
-      'Mañana': [['Programación'], ['Algoritmos'], ['Repaso']],
-      Tarde: [['Mentoría'], ['Lectura'], []],
+      'Mañana': [[classEntry('Programación', 'Aula 302')], [classEntry('Algoritmos', 'Aula 402')], [classEntry('Repaso', 'Biblioteca')]],
+      Tarde: [[classEntry('Mentoría', 'Sala 1')], [classEntry('Lectura', 'Biblioteca')], []],
     },
     Jueves: {
-      'Mañana': [['Química'], ['Inglés'], ['Práctica']],
-      Tarde: [['Proyecto final'], ['Laboratorio'], []],
+      'Mañana': [[classEntry('Química', 'Laboratorio 2')], [classEntry('Inglés', 'Aula 303')], [classEntry('Práctica', 'Aula 302')]],
+      Tarde: [[classEntry('Proyecto final', 'Aula de trabajo')], [classEntry('Laboratorio', 'Lab. de ciencias')], []],
     },
     Viernes: {
-      'Mañana': [['Simulacro examen'], ['Feedback'], ['Plan semanal']],
-      Tarde: [['Descanso'], [], []],
+      'Mañana': [[classEntry('Simulacro examen', 'Aula 201')], [classEntry('Feedback', 'Sala 1')], [classEntry('Plan semanal', 'Biblioteca')]],
+      Tarde: [[classEntry('Descanso', 'Casa')], [], []],
     },
     Sábado: {
-      'Mañana': [['Profundización'], ['Lectura'], []],
+      'Mañana': [[classEntry('Profundización', 'Biblioteca')], [classEntry('Lectura', 'Biblioteca')], []],
       Tarde: [[], [], []],
     },
     Domingo: {
@@ -126,8 +136,7 @@ async function seed() {
   const demoPassword = process.env.AUTH_SEED_PASSWORD || 'Estudio123!';
   const demoName = process.env.AUTH_SEED_NAME || 'Alumno demo';
 
-  const seedUserObjectId = new mongoose.Types.ObjectId('6654f0000000000000000001');
-  const seedUserId = seedUserObjectId.toString();
+  const seedUserId = '6654f0000000000000000001';
 
   initializeDatabase();
 
@@ -141,101 +150,90 @@ async function seed() {
     createSchedule('[SEED] Horario exámenes', buildSeedScheduleB()),
   ];
 
-  await connectMongo();
-
-  await Promise.all([
-    User.deleteOne({ email: demoEmail }),
-    Subject.deleteMany({ userId: seedUserId }),
-    Task.deleteMany({ userId: seedUserObjectId }),
-    Exam.deleteMany({ userId: seedUserObjectId }),
-  ]);
+  deleteUserById(seedUserId);
+  deleteUserByEmail(demoEmail);
+  deleteSubjectsByUser(seedUserId);
+  deleteTasksByUser(seedUserId);
+  deleteExamsByUser(seedUserId);
 
   const passwordHash = await bcrypt.hash(demoPassword, 10);
-  const demoUser = await User.create({
-    _id: seedUserObjectId,
+  const demoUser = createUser({
+    id: seedUserId,
     name: demoName,
     email: demoEmail,
     passwordHash,
     role: 'student',
   });
 
-  const subjects = await Subject.insertMany([
-    { userId: seedUserId, name: 'Matemáticas', color: '#4f46e5', teacher: 'Laura Gómez' },
-    { userId: seedUserId, name: 'Programación', color: '#0ea5e9', teacher: 'Carlos Ruiz' },
-    { userId: seedUserId, name: 'Historia', color: '#f97316', teacher: 'Marina Soler' },
-  ]);
+  const subjects = [
+    createSubject(seedUserId, { name: 'Matemáticas', color: '#4f46e5', teacher: 'Laura Gómez' }),
+    createSubject(seedUserId, { name: 'Programación', color: '#0ea5e9', teacher: 'Carlos Ruiz' }),
+    createSubject(seedUserId, { name: 'Historia', color: '#f97316', teacher: 'Marina Soler' }),
+  ];
 
   const subjectMap = Object.fromEntries(subjects.map((subject) => [subject.name, subject._id]));
 
-  const tasks = await Task.insertMany([
-    {
-      userId: seedUserObjectId,
+  const tasks = [
+    createTask(seedUserId, {
       subject: subjectMap['Programación'],
       dueDate: daysFromNow(2),
       status: 'pendiente',
       isProject: true,
       title: 'Entregar SPA educativa',
       description: 'Deploy y revisión final',
-    },
-    {
-      userId: seedUserObjectId,
+    }),
+    createTask(seedUserId, {
       subject: subjectMap['Matemáticas'],
       dueDate: daysFromNow(4),
       status: 'en_progreso',
       isProject: false,
       title: 'Hoja de ejercicios derivadas',
       description: 'Resolver ejercicios 1-20',
-    },
-    {
-      userId: seedUserObjectId,
+    }),
+    createTask(seedUserId, {
       subject: subjectMap['Historia'],
       dueDate: daysFromNow(8),
       status: 'pendiente',
       isProject: false,
       title: 'Resumen revolución industrial',
       description: '2 páginas',
-    },
-    {
-      userId: seedUserObjectId,
+    }),
+    createTask(seedUserId, {
       subject: subjectMap['Programación'],
       dueDate: daysFromNow(-2),
       status: 'entregada',
       isProject: false,
       title: 'Kata de arrays',
       description: 'Resuelta y subida al repo',
-    },
-  ]);
+    }),
+  ];
 
-  const exams = await Exam.insertMany([
-    {
-      userId: seedUserObjectId,
+  const exams = [
+    createExam(seedUserId, {
       subject: subjectMap['Matemáticas'],
       date: daysFromNow(3),
       maxScore: 10,
       score: null,
-    },
-    {
-      userId: seedUserObjectId,
+    }),
+    createExam(seedUserId, {
       subject: subjectMap['Historia'],
       date: daysFromNow(6),
       maxScore: 10,
       score: null,
-    },
-    {
-      userId: seedUserObjectId,
+    }),
+    createExam(seedUserId, {
       subject: subjectMap['Programación'],
       date: daysFromNow(-7),
       maxScore: 10,
       score: 8.7,
-    },
-    {
-      userId: seedUserObjectId,
+    }),
+    createExam(seedUserId, {
       subject: subjectMap['Matemáticas'],
       date: daysFromNow(-12),
       maxScore: 10,
       score: 7.9,
-    },
-  ]);
+    }),
+  ];
 
   const token = jwt.sign({ userId: seedUserId }, jwtSecret, { expiresIn: '7d' });
 
@@ -259,16 +257,11 @@ async function seed() {
   console.log(`password: ${demoPassword}`);
   console.log('\nTambién puedes usar el JWT en curl:');
   console.log(`curl -H "Authorization: Bearer ${token}" http://localhost:${process.env.PORT || 3001}/education/dashboard`);
-
-  await mongoose.connection.close();
 }
 
 if (require.main === module) {
   seed().catch(async (error) => {
     console.error('❌ Error ejecutando seed:', error.message);
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
     process.exit(1);
   });
 }

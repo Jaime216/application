@@ -21,10 +21,51 @@ function emptySchedule() {
   return sched;
 }
 
+function formatClassEntry(entry) {
+  if (typeof entry === 'string') {
+    return { name: entry, classroom: '' };
+  }
+
+  if (!entry || typeof entry !== 'object') {
+    return { name: 'Clase', classroom: '' };
+  }
+
+  return {
+    name: String(entry.name || entry.title || entry.subject || 'Clase'),
+    classroom: String(entry.classroom || entry.room || entry.aula || entry.location || '').trim(),
+  };
+}
+
+function normalizeScheduleData(rawSchedule) {
+  const normalized = emptySchedule();
+
+  if (!rawSchedule || typeof rawSchedule !== 'object') {
+    return normalized;
+  }
+
+  days.forEach((day) => {
+    const dayData = rawSchedule[day];
+    if (!dayData || typeof dayData !== 'object') return;
+
+    periods.forEach((period) => {
+      const periodSlots = dayData[period];
+      if (!Array.isArray(periodSlots)) return;
+
+      normalized[day][period] = periodSlots.map((slot) => {
+        if (!Array.isArray(slot)) return [];
+        return slot.map((entry) => formatClassEntry(entry));
+      });
+    });
+  });
+
+  return normalized;
+}
+
 export default function Education({ apiUrl, onBack, authToken, currentUser, onLogout }) {
   const [title, setTitle] = useState('Horario semanal');
   const [schedule, setSchedule] = useState(() => emptySchedule());
   const [newClass, setNewClass] = useState('');
+  const [newClassroom, setNewClassroom] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [schedulesList, setSchedulesList] = useState([]);
@@ -115,7 +156,7 @@ export default function Education({ apiUrl, onBack, authToken, currentUser, onLo
       if (!res.ok) throw new Error('not found');
       const body = await res.json();
       setTitle(body.schedule.title || 'Horario');
-      setSchedule(body.schedule.data || emptySchedule());
+      setSchedule(normalizeScheduleData(body.schedule.data));
       setEditingId(body.schedule.id);
       setViewingScheduleId(null);
       setMessage('Cargando para edición');
@@ -130,7 +171,7 @@ export default function Education({ apiUrl, onBack, authToken, currentUser, onLo
       if (!res.ok) throw new Error('not found');
       const body = await res.json();
       setTitle(body.schedule.title || 'Horario');
-      setSchedule(body.schedule.data || emptySchedule());
+      setSchedule(normalizeScheduleData(body.schedule.data));
       setEditingId(null);
       setViewingScheduleId(body.schedule.id);
       setMessage('Horario cargado para visualización');
@@ -153,13 +194,18 @@ export default function Education({ apiUrl, onBack, authToken, currentUser, onLo
 
   function addClass(day, period, slot) {
     const name = newClass.trim();
+    const classroom = newClassroom.trim();
     if (!name) return;
     setSchedule((s) => {
       const next = JSON.parse(JSON.stringify(s));
-      next[day][period][slot].push(name);
+      next[day][period][slot].push({
+        name,
+        classroom,
+      });
       return next;
     });
     setNewClass('');
+    setNewClassroom('');
   }
 
   function removeClass(day, period, slot, index) {
@@ -176,12 +222,13 @@ export default function Education({ apiUrl, onBack, authToken, currentUser, onLo
     setMessage('');
 
     try {
+      const normalizedSchedule = normalizeScheduleData(schedule);
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId ? `${apiUrl}/schedules/${editingId}` : `${apiUrl}/schedules`;
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, data: schedule }),
+        body: JSON.stringify({ title, data: normalizedSchedule }),
       });
 
       if (!res.ok) throw new Error('Error guardando');
@@ -248,7 +295,14 @@ export default function Education({ apiUrl, onBack, authToken, currentUser, onLo
             placeholder="Nombre de la clase"
             disabled={Boolean(viewingScheduleId)}
           />
-          <small style={{ color: 'var(--muted)' }}>Escribe el nombre y usa los botones '+' en la casilla destino</small>
+          <label style={{ display: 'block', marginTop: 8 }}>Aula / clase donde se imparte</label>
+          <input
+            value={newClassroom}
+            onChange={(e) => setNewClassroom(e.target.value)}
+            placeholder="Ej: Aula 204"
+            disabled={Boolean(viewingScheduleId)}
+          />
+          <small style={{ color: 'var(--muted)' }}>Escribe el nombre, el aula y usa los botones '+' en la casilla destino</small>
         </div>
 
         <div style={{ overflowX: 'auto', marginTop: 16 }}>
@@ -278,14 +332,23 @@ export default function Education({ apiUrl, onBack, authToken, currentUser, onLo
                           {slotArr.length === 0 ? (
                             <div className="empty">vacío</div>
                           ) : (
-                            slotArr.map((c, idx) => (
-                              <div className="class-item" key={idx}>
-                                <span>{c}</span>
-                                {!viewingScheduleId ? (
-                                  <button type="button" onClick={() => removeClass(day, p, slotIdx, idx)}>x</button>
-                                ) : null}
-                              </div>
-                            ))
+                            slotArr.map((c, idx) => {
+                              const formatted = formatClassEntry(c);
+
+                              return (
+                                <div className="class-item" key={idx}>
+                                  <div className="class-item-content">
+                                    <span className="class-item-name">{formatted.name}</span>
+                                    {formatted.classroom ? (
+                                      <span className="class-item-classroom">{formatted.classroom}</span>
+                                    ) : null}
+                                  </div>
+                                  {!viewingScheduleId ? (
+                                    <button type="button" onClick={() => removeClass(day, p, slotIdx, idx)}>x</button>
+                                  ) : null}
+                                </div>
+                              );
+                            })
                           )}
 
                           <div style={{ marginTop: 6 }}>
@@ -375,7 +438,7 @@ export default function Education({ apiUrl, onBack, authToken, currentUser, onLo
           id="task-subject-id"
           value={taskSubjectId}
           onChange={(event) => setTaskSubjectId(event.target.value)}
-          placeholder="ObjectId de la asignatura"
+          placeholder="ID de la asignatura"
           style={{ marginBottom: 8 }}
         />
 

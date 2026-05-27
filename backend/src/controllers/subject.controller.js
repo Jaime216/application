@@ -1,10 +1,13 @@
-const { Subject } = require('../models');
+const {
+  listSubjects,
+  createSubject: createSubjectRecord,
+  updateSubject: updateSubjectRecord,
+  deleteSubject: deleteSubjectRecord,
+} = require('../db');
 
 async function getSubjects(req, res) {
   try {
-    const subjects = await Subject.find({ userId: req.user.id })
-      .sort({ name: 1 })
-      .lean();
+    const subjects = listSubjects(req.user.id);
 
     return res.json({ subjects });
   } catch (error) {
@@ -14,10 +17,7 @@ async function getSubjects(req, res) {
 
 async function createSubject(req, res) {
   try {
-    const subject = await Subject.create({
-      ...req.body,
-      userId: req.user.id,
-    });
+    const subject = createSubjectRecord(req.user.id, req.body);
 
     return res.status(201).json({ subject });
   } catch (error) {
@@ -36,11 +36,7 @@ async function patchSubject(req, res) {
   }
 
   try {
-    const subject = await Subject.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
-      { $set: updates },
-      { new: true, runValidators: true },
-    );
+    const subject = updateSubjectRecord(req.params.id, req.user.id, updates);
 
     if (!subject) {
       return res.status(404).json({ error: 'subject not found' });
@@ -54,13 +50,13 @@ async function patchSubject(req, res) {
 
 async function deleteSubject(req, res) {
   try {
-    const subject = await Subject.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    const deleted = deleteSubjectRecord(req.params.id, req.user.id);
 
-    if (!subject) {
+    if (!deleted) {
       return res.status(404).json({ error: 'subject not found' });
     }
 
-    return res.json({ deleted: true, subjectId: subject._id });
+    return res.json({ deleted: true, subjectId: req.params.id });
   } catch (error) {
     return res.status(500).json({ error: 'failed to delete subject' });
   }

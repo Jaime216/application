@@ -5,13 +5,13 @@ function startOfToday() {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
-const objectIdSchema = z
+const idSchema = z
   .string()
   .trim()
-  .regex(/^[a-fA-F0-9]{24}$/, 'subject must be a valid ObjectId');
+  .min(1, 'subject must be a valid id');
 
 const createTaskSchema = z.object({
-  subject: objectIdSchema,
+  subject: idSchema,
   title: z.string().trim().min(3, 'title must have at least 3 characters'),
   dueDate: z.coerce
     .date({ invalid_type_error: 'dueDate must be a valid date' })
@@ -25,7 +25,7 @@ const createTaskSchema = z.object({
 
 const createExamSchema = z
   .object({
-    subject: objectIdSchema,
+    subject: idSchema,
     date: z.coerce.date({ invalid_type_error: 'date must be a valid date' }),
     maxScore: z.coerce.number().positive('maxScore must be greater than 0').optional(),
     score: z.coerce.number().optional(),

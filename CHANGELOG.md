@@ -21,11 +21,13 @@ Formato: cada entrada indica la versión, fecha y lista de cambios importantes.
   - `Education` consume `authToken` desde la SPA y ya no depende de token manual.
   - `EducationDashboard` con media global, próximos exámenes, tareas urgentes y estado loading.
   - `EducationCalendar` con `react-big-calendar` y eventos coloreados por asignatura.
+  - Horario semanal con soporte para mostrar la clase y el aula en cada bloque.
   - `SubjectManager` + `ColorPicker` para crear/listar/editar/borrar asignaturas.
   - Integración de `CreateTaskForm`, `SchoolTaskKanban` y `GradesQuickEntry` con soporte de sesión autenticada.
   - Pantalla `Educación` ampliada con acceso protegido y refresco de tareas/exámenes desde backend.
 - Infra/documentación:
   - `backend/scripts/seed.js` para poblar SQLite+Mongo con datos de prueba completos (schedules, subjects, tasks, exams) y credenciales demo.
+  - Los horarios semilla ahora guardan clase y aula en cada bloque para mostrarlo en el horario.
   - `backend/package.json` incluye `bcryptjs` para el hash de contraseñas.
   - README actualizado con login real, rutas actuales y flujo de uso desde UI.
   - Build de frontend validado tras cambios (`npm run build --prefix frontend`).

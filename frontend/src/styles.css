@@ -209,11 +209,29 @@ h1 {
 .slot-box .class-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 8px 10px;
   border-radius: 8px;
   background: rgba(255,255,255,0.02);
   margin-bottom: 6px;
+}
+
+.class-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.class-item-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.class-item-classroom {
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .slot-box .class-item button {
