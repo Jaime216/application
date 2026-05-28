@@ -94,7 +94,7 @@ export default function CreateExamForm({ apiUrl, authToken, subjectId = '', onCr
   }
 
   return (
-    <form onSubmit={handleSubmit} className="panel" style={{ marginTop: 12 }}>
+    <form onSubmit={handleSubmit} className="panel create-exam-form" style={{ marginTop: 12 }}>
       <div className="panel-header">
         <h2>Crear examen</h2>
         <p>Crea un examen nuevo para una asignatura (usa el Subject ID).</p>
@@ -103,19 +103,23 @@ export default function CreateExamForm({ apiUrl, authToken, subjectId = '', onCr
       {message ? <div className="notice">{message}</div> : null}
       {error ? <div className="notice error">{error}</div> : null}
 
-      <label>Asignatura</label>
-      <select
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        disabled={loadingSubjects}
-      >
-        <option value="">{loadingSubjects ? 'Cargando asignaturas...' : 'Selecciona una asignatura'}</option>
-        {subjects.map((item) => (
-          <option key={item._id} value={item._id}>
-            {item.name}{item.teacher ? ` - ${item.teacher}` : ''}
-          </option>
-        ))}
-      </select>
+      <div className="subject-picker-panel">
+        <label htmlFor="exam-subject-picker">Asignatura</label>
+        <select
+          id="exam-subject-picker"
+          className="subject-picker-select"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          disabled={loadingSubjects}
+        >
+          <option value="">{loadingSubjects ? 'Cargando asignaturas...' : 'Selecciona una asignatura'}</option>
+          {subjects.map((item) => (
+            <option key={item._id} value={item._id}>
+              {item.name}{item.teacher ? ` - ${item.teacher}` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <label>Subject ID (manual, opcional)</label>
       <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="ID de la asignatura" />

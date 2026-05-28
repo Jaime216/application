@@ -1,5 +1,7 @@
 const {
   listExams,
+  listCompletedExams,
+  listExamHistory,
   createExam: createExamRecord,
   getExam: getExamRecord,
   updateExam: updateExamRecord,
@@ -61,13 +63,18 @@ async function patchExam(req, res) {
       }
     }
 
-    const exam = updateExamRecord(req.params.id, req.user.id, updates);
+    const result = updateExamRecord(req.params.id, req.user.id, updates);
 
-    if (!exam) {
+    if (!result || !result.exam) {
       return res.status(404).json({ error: 'exam not found' });
     }
 
-    return res.json({ exam });
+    // result may include movedToCompleted flag
+    if (result.movedToCompleted) {
+      return res.json({ exam: result.exam, movedToCompleted: true });
+    }
+
+    return res.json({ exam: result.exam, movedToCompleted: false });
   } catch (error) {
     return res.status(500).json({ error: 'failed to update exam' });
   }
@@ -87,9 +94,29 @@ async function deleteExam(req, res) {
   }
 }
 
+async function getCompletedExams(req, res) {
+  try {
+    const exams = listCompletedExams(req.user.id);
+    return res.json({ exams });
+  } catch (error) {
+    return res.status(500).json({ error: 'failed to load completed exams' });
+  }
+}
+
+async function getExamHistory(req, res) {
+  try {
+    const history = listExamHistory(req.user.id);
+    return res.json({ history });
+  } catch (error) {
+    return res.status(500).json({ error: 'failed to load exam history' });
+  }
+}
+
 module.exports = {
   getExams,
   createExam,
   patchExam,
   deleteExam,
+  getCompletedExams,
+  getExamHistory,
 };

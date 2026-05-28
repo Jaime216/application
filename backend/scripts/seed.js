@@ -16,6 +16,7 @@ const {
   createSubject,
   createTask,
   createExam,
+  updateExam,
 } = require('../src/db');
 
 function loadEnvFile() {
@@ -208,32 +209,31 @@ async function seed() {
     }),
   ];
 
-  const exams = [
-    createExam(seedUserId, {
-      subject: subjectMap['Matemáticas'],
-      date: daysFromNow(3),
-      maxScore: 10,
-      score: null,
-    }),
-    createExam(seedUserId, {
-      subject: subjectMap['Historia'],
-      date: daysFromNow(6),
-      maxScore: 10,
-      score: null,
-    }),
-    createExam(seedUserId, {
-      subject: subjectMap['Programación'],
-      date: daysFromNow(-7),
-      maxScore: 10,
-      score: 8.7,
-    }),
-    createExam(seedUserId, {
-      subject: subjectMap['Matemáticas'],
-      date: daysFromNow(-12),
-      maxScore: 10,
-      score: 7.9,
-    }),
+  // Create exams. For exams that should be already graded in the past,
+  // create them without a score first, then call `updateExam` to set the
+  // score so that `exam_history` entries are created through the normal
+  // update flow.
+  const examsData = [
+    { subject: subjectMap['Matemáticas'], date: daysFromNow(3), maxScore: 10, score: null },
+    { subject: subjectMap['Historia'], date: daysFromNow(6), maxScore: 10, score: null },
+    { subject: subjectMap['Programación'], date: daysFromNow(-7), maxScore: 10, score: 8.7 },
+    { subject: subjectMap['Matemáticas'], date: daysFromNow(-12), maxScore: 10, score: 7.9 },
   ];
+
+  const exams = [];
+  for (const item of examsData) {
+    const created = createExam(seedUserId, {
+      subject: item.subject,
+      date: item.date,
+      maxScore: item.maxScore,
+      score: null,
+    });
+    exams.push(created);
+    if (item.score !== null && item.score !== undefined) {
+      // updateExam will save the score and insert history
+      updateExam(created.id || created._id, seedUserId, { score: item.score });
+    }
+  }
 
   const token = jwt.sign({ userId: seedUserId }, jwtSecret, { expiresIn: '7d' });
 

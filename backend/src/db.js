@@ -168,6 +168,19 @@ function initializeDatabase() {
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS exam_history (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT,
+      user_id TEXT NOT NULL,
+      subject_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      score REAL NOT NULL,
+      score_scale INTEGER,
+      recorded_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS schedules (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -182,6 +195,8 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_tasks_subject_id ON tasks(subject_id);
     CREATE INDEX IF NOT EXISTS idx_exams_user_id ON exams(user_id);
     CREATE INDEX IF NOT EXISTS idx_exams_subject_id ON exams(subject_id);
+    CREATE INDEX IF NOT EXISTS idx_exam_history_user_id ON exam_history(user_id);
+    CREATE INDEX IF NOT EXISTS idx_exam_history_subject_id ON exam_history(subject_id);
   `);
 }
 
@@ -545,6 +560,39 @@ function updateExam(id, userId, updates) {
     scoreScale: Object.prototype.hasOwnProperty.call(updates, 'scoreScale') ? updates.scoreScale : current.scoreScale,
   };
 
+  // If a score is being provided (not undefined) and it's non-null, update the
+  // exam in place and create a history entry. `score === null` clears the score.
+  if (Object.prototype.hasOwnProperty.call(updates, 'score') && updates.score !== null) {
+    database.transaction(() => {
+      database
+        .prepare('UPDATE exams SET subject_id = ?, date = ?, max_score = ?, score = ?, score_scale = ? WHERE id = ? AND user_id = ?')
+        .run(
+          next.subjectId,
+          next.date,
+          next.maxScore,
+          next.score === undefined ? null : next.score,
+          next.scoreScale === undefined ? null : next.scoreScale,
+          id,
+          userId,
+        );
+
+      try {
+        const historyId = generateId();
+        database
+          .prepare('INSERT INTO exam_history (id, exam_id, user_id, subject_id, date, score, score_scale) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .run(historyId, id, userId, next.subjectId, next.date, next.score === undefined ? null : next.score, next.scoreScale === undefined ? null : next.scoreScale);
+      } catch (err) {
+        // continue even if history logging fails
+      }
+    })();
+
+    return {
+      exam: getExam(id, userId),
+      movedToCompleted: true,
+    };
+  }
+
+  // Regular update when score not being set to a non-null value
   database
     .prepare('UPDATE exams SET subject_id = ?, date = ?, max_score = ?, score = ?, score_scale = ? WHERE id = ? AND user_id = ?')
     .run(
@@ -557,7 +605,73 @@ function updateExam(id, userId, updates) {
       userId,
     );
 
-  return getExam(id, userId);
+  return { exam: getExam(id, userId), movedToCompleted: false };
+}
+
+function listExamHistory(userId, limit = 20) {
+  const rows = database
+    .prepare(
+      `SELECT
+        eh.*,
+        s.id AS subject_id,
+        s.user_id AS subject_user_id,
+        s.name AS subject_name,
+        s.teacher AS subject_teacher,
+        s.color AS subject_color,
+        s.created_at AS subject_created_at
+      FROM exam_history eh
+      JOIN subjects s ON s.id = eh.subject_id
+      WHERE eh.user_id = ?
+      ORDER BY datetime(eh.recorded_at) DESC
+      LIMIT ?`,
+    )
+    .all(userId, limit);
+
+  return rows.map((row) => ({
+    id: row.id,
+    examId: row.exam_id,
+    userId: row.user_id,
+    subject: serializeSubject({
+      id: row.subject_id,
+      user_id: row.subject_user_id,
+      name: row.subject_name,
+      teacher: row.subject_teacher,
+      color: row.subject_color,
+      created_at: row.subject_created_at,
+    }),
+    date: row.date,
+    score: Number(row.score),
+    scoreScale: row.score_scale,
+    recordedAt: row.recorded_at,
+  }));
+}
+
+function listCompletedExams(userId) {
+  const rows = database
+    .prepare(
+      `SELECT
+        e.*,
+        s.id AS subject_id,
+        s.user_id AS subject_user_id,
+        s.name AS subject_name,
+        s.teacher AS subject_teacher,
+        s.color AS subject_color,
+        s.created_at AS subject_created_at
+      FROM exams e
+      JOIN subjects s ON s.id = e.subject_id
+      WHERE e.user_id = ? AND e.score IS NOT NULL
+      ORDER BY datetime(e.date) DESC, datetime(e.created_at) DESC`,
+    )
+    .all(userId);
+
+  return rows.map((row) => serializeExam(row, {
+    id: row.subject_id,
+    user_id: row.subject_user_id,
+    name: row.subject_name,
+    teacher: row.subject_teacher,
+    color: row.subject_color,
+    created_at: row.subject_created_at,
+  }));
 }
 
 function deleteExam(id, userId) {
@@ -572,7 +686,7 @@ function getEducationDashboard(userId) {
   const exams = listExams(userId)
     .filter((exam) => {
       const examDate = new Date(exam.date);
-      return !Number.isNaN(examDate.getTime()) && examDate >= now;
+      return !Number.isNaN(examDate.getTime()) && examDate >= now && exam.score === null;
     })
     .sort((left, right) => new Date(left.date) - new Date(right.date))
     .slice(0, 3);
@@ -587,14 +701,11 @@ function getEducationDashboard(userId) {
     })
     .sort((left, right) => new Date(left.dueDate) - new Date(right.dueDate));
 
-  const completedExams = listExams(userId).filter((exam) => {
-    const examDate = new Date(exam.date);
-    return !Number.isNaN(examDate.getTime()) && examDate <= now && exam.score !== null;
-  });
+  const allCompleted = listCompletedExams(userId);
 
-  const totalCompleted = completedExams.length;
+  const totalCompleted = allCompleted.length;
   const value = totalCompleted
-    ? Number((completedExams.reduce((sum, exam) => sum + Number(exam.score || 0), 0) / totalCompleted).toFixed(2))
+    ? Number((allCompleted.reduce((sum, exam) => sum + Number(exam.score || 0), 0) / totalCompleted).toFixed(2))
     : null;
 
   return {
@@ -604,6 +715,63 @@ function getEducationDashboard(userId) {
       value,
       totalCompleted,
     },
+  };
+}
+
+function getEducationMetrics(userId) {
+  const tasks = listTasks(userId);
+  const exams = listExams(userId);
+  const completed = listCompletedExams(userId);
+  const subjects = listSubjects(userId);
+
+  const tasksByStatus = tasks.reduce((acc, t) => {
+    const key = t.status || 'pendiente';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const upcomingExams = exams
+    .filter((e) => {
+      const d = new Date(e.date);
+      return !Number.isNaN(d.getTime()) && d >= new Date() && e.score === null;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 5);
+
+  const pendingExams = exams.filter((e) => e.score === null).length;
+
+  const completedCount = completed.length;
+
+  return {
+    counts: {
+      tasks: tasks.length,
+      tasksByStatus,
+      exams: exams.length,
+      examsUpcoming: upcomingExams.length,
+      examsPending: pendingExams,
+      examsCompleted: completedCount,
+      subjects: subjects.length,
+    },
+    upcomingExams,
+    subjects: subjects.map((s) => ({ id: s._id, name: s.name })),
+  };
+}
+
+function getSubjectStats(subjectId, userId) {
+  const subject = getSubject(subjectId, userId);
+  if (!subject) return null;
+
+  const tasks = listTasks(userId).filter((t) => String(t.subject?._id) === String(subjectId));
+  const exams = listExams(userId).filter((e) => String(e.subject?._id) === String(subjectId));
+  const completed = listCompletedExams(userId).filter((e) => String(e.subject?._id) === String(subjectId));
+
+  return {
+    subject: { id: subject._id, name: subject.name },
+    tasks: tasks.length,
+    tasksByStatus: tasks.reduce((acc, t) => { const k = t.status || 'pendiente'; acc[k] = (acc[k]||0)+1; return acc; }, {}),
+    exams: exams.length,
+    examsUpcoming: exams.filter((e) => new Date(e.date) >= new Date()).length,
+    examsCompleted: completed.length,
   };
 }
 
@@ -639,5 +807,9 @@ module.exports = {
   createExam,
   updateExam,
   deleteExam,
+  listCompletedExams,
+  getEducationMetrics,
+  getSubjectStats,
+  listExamHistory,
   getEducationDashboard,
 };

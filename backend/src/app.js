@@ -1,9 +1,11 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 const { getDatabaseStatus, initializeDatabase, listSchedules, createSchedule, getSchedule, updateSchedule, deleteSchedule } = require('./db');
-const { getEducationDashboard } = require('./controllers/education.controller');
+const { getEducationDashboard, getEducationMetrics, getSubjectStats } = require('./controllers/education.controller');
 const { getTasks, createTask, patchTask, deleteTask } = require('./controllers/task.controller');
-const { getExams, createExam, patchExam, deleteExam } = require('./controllers/exam.controller');
+const { getExams, createExam, patchExam, deleteExam, getCompletedExams, getExamHistory } = require('./controllers/exam.controller');
 const { getSubjects, createSubject, patchSubject, deleteSubject } = require('./controllers/subject.controller');
 const { login, me } = require('./controllers/auth.controller');
 const { protectRoute } = require('./middleware/protectRoute');
@@ -158,10 +160,12 @@ app.delete('/schedules/:id', (req, res) => {
 });
 
 app.get('/education/dashboard', protectRoute, getEducationDashboard);
+app.get('/education/metrics', protectRoute, getEducationMetrics);
 app.get('/education/subjects', protectRoute, getSubjects);
 app.post('/education/subjects', protectRoute, validateRequest(createSubjectSchema), createSubject);
 app.patch('/education/subjects/:id', protectRoute, validateRequest(updateSubjectSchema), patchSubject);
 app.delete('/education/subjects/:id', protectRoute, deleteSubject);
+app.get('/education/subjects/:id/stats', protectRoute, getSubjectStats);
 
 app.get('/education/tasks', protectRoute, getTasks);
 app.post('/education/tasks', protectRoute, validateRequest(createTaskSchema), createTask);
@@ -172,5 +176,22 @@ app.get('/education/exams', protectRoute, getExams);
 app.post('/education/exams', protectRoute, validateRequest(createExamSchema), createExam);
 app.patch('/education/exams/:id', protectRoute, patchExam);
 app.delete('/education/exams/:id', protectRoute, deleteExam);
+
+app.get('/education/exams/completed', protectRoute, getCompletedExams);
+app.get('/education/exams/history', protectRoute, getExamHistory);
+
+// Serve static frontend from backend/public when present (production packaging)
+try {
+  const publicPath = path.join(__dirname, '..', 'public');
+  const indexFile = path.join(publicPath, 'index.html');
+  if (fs.existsSync(publicPath) && fs.existsSync(indexFile)) {
+    app.use(express.static(publicPath));
+    app.get('*', (req, res) => {
+      res.sendFile(indexFile);
+    });
+  }
+} catch (e) {
+  // ignore static serving errors
+}
 
 module.exports = app;

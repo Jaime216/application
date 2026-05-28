@@ -1,215 +1,119 @@
-import React, { useMemo } from 'react';
-import useEducationStats from '../hooks/useEducationStats';
+import React, { useEffect, useState } from 'react';
 import EducationCalendar from './EducationCalendar';
 
 function formatDate(value) {
   if (!value) return 'Sin fecha';
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Sin fecha';
-
-  return date.toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function toDate(value) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function daysUntil(value) {
-  const date = toDate(value);
-  if (!date) return null;
-
-  const current = new Date();
-  const diff = date.setHours(0, 0, 0, 0) - current.setHours(0, 0, 0, 0);
-  return Math.round(diff / 86400000);
-}
-
-function getSubjectMeta(item) {
-  const subject = item?.subject;
-
-  if (!subject || typeof subject !== 'object') {
-    return { name: 'Asignatura', color: '#94a3b8' };
-  }
-
-  return {
-    name: subject.name || 'Asignatura',
-    color: subject.color || '#94a3b8',
-  };
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 export default function EducationDashboard({ apiUrl, authToken }) {
-  const { data, loading, error, fetchEducationStats } = useEducationStats({ apiUrl, authToken });
+  const [metrics, setMetrics] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const average = data?.globalAverage?.value;
-  const averageLabel = typeof average === 'number' ? average.toFixed(2) : '--';
-  const exams = data?.upcomingExams || [];
-  const urgentTasks = data?.dueTasks || [];
+  async function load() {
+    const token = (authToken || '').trim();
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [mRes, dRes] = await Promise.all([
+        fetch(`${apiUrl}/education/metrics`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/education/dashboard`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
 
-  const studyPlan = useMemo(() => {
-    const items = [
-      ...exams.map((exam) => ({
-        type: 'Examen',
-        title: exam?.title || exam?.subject?.name || 'Examen pendiente',
-        date: exam?.date,
-        item: exam,
-        urgency: daysUntil(exam?.date),
-      })),
-      ...urgentTasks.map((task) => ({
-        type: 'Tarea',
-        title: task?.title || 'Tarea pendiente',
-        date: task?.dueDate,
-        item: task,
-        urgency: daysUntil(task?.dueDate),
-      })),
-    ];
+      const mBody = await mRes.json().catch(() => ({}));
+      const dBody = await dRes.json().catch(() => ({}));
 
-    return items
-      .sort((left, right) => {
-        const leftUrgency = typeof left.urgency === 'number' ? left.urgency : 99;
-        const rightUrgency = typeof right.urgency === 'number' ? right.urgency : 99;
-        return leftUrgency - rightUrgency;
-      })
-      .slice(0, 4);
-  }, [exams, urgentTasks]);
-
-  const studyCounts = useMemo(() => {
-    const examSoon = exams.filter((exam) => {
-      const delta = daysUntil(exam?.date);
-      return delta !== null && delta <= 7;
-    }).length;
-
-    const taskSoon = urgentTasks.length;
-
-    return {
-      examSoon,
-      taskSoon,
-      total: examSoon + taskSoon,
-    };
-  }, [exams, urgentTasks]);
-
-  async function refreshDashboard() {
-    await fetchEducationStats();
+      setMetrics(mBody);
+      setDashboard(dBody);
+    } catch (err) {
+      setError('No se pudieron cargar las métricas');
+      setMetrics(null);
+      setDashboard(null);
+    } finally {
+      setLoading(false);
+    }
   }
 
+  useEffect(() => { load(); }, [apiUrl, authToken]);
+
+  const counts = metrics?.counts || {};
+  const upcoming = metrics?.upcomingExams || dashboard?.upcomingExams || [];
+  const dueTasks = dashboard?.dueTasks || [];
+  const globalAverage = dashboard?.globalAverage || { value: null, totalCompleted: 0 };
+
   return (
-    <section className="panel">
+    <section className="panel" style={{ minWidth: 420 }}>
       <div className="panel-header">
-        <div className="dashboard-header-row">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2>Education Dashboard</h2>
-            <p>Resumen de notas, próximos exámenes y tareas urgentes.</p>
+            <p>Resumen construido a partir de las métricas del backend.</p>
           </div>
-          <button type="button" className="ghost-button" onClick={refreshDashboard} disabled={loading}>
-            {loading ? 'Actualizando...' : 'Actualizar métricas'}
-          </button>
+          <div>
+            <button type="button" className="ghost-button" onClick={load} disabled={loading}>
+              {loading ? 'Actualizando...' : 'Actualizar'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="dashboard-loading" role="status" aria-live="polite">
-          <span className="loading-spinner" aria-hidden="true" />
-          <span>Cargando estadísticas...</span>
-        </div>
-      ) : (
-        <>
-          <div className="education-dashboard-grid">
-            <article className="dashboard-card dashboard-card-average">
-              <h3>Media global</h3>
-              <p className="average-big">{averageLabel}</p>
-              <small>Exámenes evaluados: {data?.globalAverage?.totalCompleted || 0}</small>
-            </article>
+      {loading ? <div>Cargando métricas...</div> : null}
+      {error ? <div className="notice error">{error}</div> : null}
 
-            <article className="dashboard-card">
-              <h3>Plan de hoy</h3>
-              <p className="dashboard-kpi">{studyCounts.total}</p>
-              <small>{studyCounts.total === 1 ? 'acción prioritaria' : 'acciones prioritarias'} en la semana</small>
-              <div className="dashboard-mini-stats">
-                <span>{studyCounts.examSoon} exámenes</span>
-                <span>{studyCounts.taskSoon} tareas</span>
-              </div>
-            </article>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <article className="dashboard-card">
+          <h3>Contadores</h3>
+          <div><strong>Tareas:</strong> {counts.tasks ?? 0}</div>
+          <div><strong>Tareas pendientes:</strong> {counts.tasksByStatus?.pendiente ?? 0}</div>
+          <div><strong>Exámenes pendientes:</strong> {counts.examsPending ?? 0}</div>
+          <div><strong>Exámenes completados:</strong> {counts.examsCompleted ?? 0}</div>
+          <div><strong>Asignaturas:</strong> {counts.subjects ?? 0}</div>
+        </article>
 
-            <article className="dashboard-card">
-              <h3>Próximos 3 exámenes</h3>
-              {exams.length === 0 ? (
-                <p className="empty">No hay exámenes próximos.</p>
-              ) : (
-                <ul className="dashboard-list">
-                  {exams.map((exam) => (
-                    <li key={exam._id}>
-                      <span className="subject-pill" style={{ backgroundColor: exam?.subject?.color || '#94a3b8' }} />
-                      <strong>{exam?.subject?.name || 'Asignatura'}</strong>
-                      <small>{formatDate(exam?.date)}</small>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
+        <article className="dashboard-card">
+          <h3>Media global</h3>
+          <p style={{ fontSize: 24, margin: '8px 0' }}>{typeof globalAverage.value === 'number' ? globalAverage.value.toFixed(2) : '--'}</p>
+          <small>Exámenes evaluados: {globalAverage.totalCompleted ?? 0}</small>
+        </article>
 
-            <article className="dashboard-card">
-              <h3>Tareas urgentes (7 días)</h3>
-              {urgentTasks.length === 0 ? (
-                <p className="empty">No hay tareas urgentes esta semana.</p>
-              ) : (
-                <ul className="dashboard-list">
-                  {urgentTasks.map((task) => (
-                    <li key={task._id}>
-                      <span className="subject-pill" style={{ backgroundColor: task?.subject?.color || '#94a3b8' }} />
-                      <strong>{task?.title || 'Tarea'}</strong>
-                      <small>{formatDate(task?.dueDate)}</small>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
-          </div>
+        <article className="dashboard-card">
+          <h3>Próximos exámenes</h3>
+          {upcoming.length === 0 ? <p className="empty">No hay exámenes próximos.</p> : (
+            <ul className="dashboard-list">
+              {upcoming.slice(0, 5).map((exam) => (
+                <li key={exam.id || exam._id}>
+                  <span className="subject-pill" style={{ backgroundColor: exam?.subject?.color || '#94a3b8' }} />
+                  <strong>{exam?.subject?.name || 'Asignatura'}</strong>
+                  <small style={{ marginLeft: 8 }}>{formatDate(exam?.date)}</small>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
 
-          <article className="dashboard-card dashboard-roadmap">
-            <h3>Prioridad de estudio</h3>
-            {studyPlan.length === 0 ? (
-              <p className="empty">No hay elementos urgentes ahora mismo.</p>
-            ) : (
-              <ul className="dashboard-roadmap-list">
-                {studyPlan.map((entry, index) => {
-                  const meta = getSubjectMeta(entry.item);
-                  const urgency = typeof entry.urgency === 'number' ? entry.urgency : null;
-                  const urgencyLabel = urgency === 0
-                    ? 'Hoy'
-                    : urgency === 1
-                      ? 'Mañana'
-                      : urgency && urgency > 1
-                        ? `En ${urgency} días`
-                        : 'Sin fecha';
+        <article className="dashboard-card">
+          <h3>Tareas urgentes (7 días)</h3>
+          {dueTasks.length === 0 ? <p className="empty">No hay tareas urgentes esta semana.</p> : (
+            <ul className="dashboard-list">
+              {dueTasks.map((task) => (
+                <li key={task.id || task._id}>
+                  <strong>{task.title}</strong>
+                  <small style={{ marginLeft: 8 }}>{task?.subject?.name ?? ''} · {formatDate(task?.dueDate)}</small>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+      </div>
 
-                  return (
-                    <li key={`${entry.type}-${entry.item?._id || index}`}>
-                      <div className="roadmap-index">{index + 1}</div>
-                      <span className="subject-pill" style={{ backgroundColor: meta.color }} />
-                      <div className="roadmap-content">
-                        <strong>{entry.title}</strong>
-                        <small>{meta.name} · {entry.type}</small>
-                      </div>
-                      <div className="roadmap-meta">
-                        <span>{urgencyLabel}</span>
-                        <small>{formatDate(entry.date)}</small>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </article>
-
-          <EducationCalendar tasks={urgentTasks} exams={exams} />
-        </>
-      )}
-
-      {error ? <p className="field-error" style={{ marginTop: 10 }}>{error}</p> : null}
+      <div style={{ marginTop: 12 }}>
+        <EducationCalendar tasks={dueTasks} exams={upcoming} />
+      </div>
     </section>
   );
 }

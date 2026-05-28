@@ -21,7 +21,6 @@ export default function SubjectManager({
   authToken,
   refreshTrigger,
   selectedSubjectId,
-  onSubjectSelect,
 }) {
   const [subjects, setSubjects] = useState([]);
   const [form, setForm] = useState(INITIAL_FORM);
@@ -148,10 +147,6 @@ export default function SubjectManager({
         throw new Error(payload?.error?.message || payload?.error || 'No se pudo eliminar la asignatura');
       }
 
-      if (selectedSubjectId === subjectId && onSubjectSelect) {
-        onSubjectSelect(null);
-      }
-
       setFeedback('Asignatura eliminada');
       await loadSubjects();
     } catch (removeError) {
@@ -224,9 +219,6 @@ export default function SubjectManager({
                   </div>
                   <p>{subject.teacher || 'Sin profesor asignado'}</p>
                   <div className="subject-card-actions">
-                    <button type="button" onClick={() => onSubjectSelect?.(subject)}>
-                      {isSelected ? 'Seleccionada' : 'Usar en tareas'}
-                    </button>
                     <button type="button" onClick={() => startEdit(subject)} className="ghost-button">
                       Editar
                     </button>
@@ -234,6 +226,7 @@ export default function SubjectManager({
                       Eliminar
                     </button>
                   </div>
+                  {isSelected ? <p className="subject-selected-note">Seleccionada para tareas</p> : null}
                 </article>
               );
             })}

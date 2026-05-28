@@ -55,6 +55,30 @@ Si quieres compartirla con otra persona, basta con pasarle la carpeta del proyec
 2. Ejecutar `npm run local`.
 3. Abrir `http://localhost:5173` e iniciar sesión con la cuenta demo.
 
+### Empaquetado para distribución local (build + servidor)
+
+Hemos añadido un helper que genera una versión empaquetada lista para ejecutar en otra máquina. Desde la raíz del repo:
+
+```bash
+npm run package-local
+```
+
+Esto hará un `build` del frontend, copiará `frontend/dist` a `backend/public` y generará un tarball `spa-app-local-*.tar.gz` en la raíz.
+
+Para desplegar el paquete en una máquina objetivo:
+
+```bash
+tar xzf spa-app-local-20260528011012.tar.gz  # o el tar.gz generado
+cd backend
+npm install --production
+export JWT_SECRET=una_clave_segura_aquí
+npm start
+```
+
+El backend servirá los ficheros estáticos desde `backend/public` si existe, por lo que la app quedará accesible en el puerto configurado (`PORT`, por defecto `3001`).
+
+Más detalles y alternativas están en `Mejoras.md`.
+
 ## Endpoints principales
 
 - `GET /`

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import Education from './components/Education';
+import EducationHub from './pages/EducationHub';
 
 const defaultApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const authStorageKey = 'spa-app-auth-token';
@@ -258,7 +258,7 @@ function App() {
 
   if (view === 'education') {
     return (
-      <Education
+      <EducationHub
         apiUrl={apiUrl}
         authToken={authToken}
         currentUser={currentUser}
@@ -270,7 +270,7 @@ function App() {
 
   return (
     <main className="shell">
-      <section className="hero">
+      <section className="hero app-home-hero">
         <div className="hero-topbar">
           <div>
             <p className="eyebrow">React SPA</p>
@@ -299,7 +299,7 @@ function App() {
           <button type="button" onClick={loadRoot}>Ver raíz</button>
         </div>
 
-        <div className="modules-row">
+        <div className="modules-row app-home-modules">
           <div className="module-card" onClick={() => setView('education')}>
             <h3>Educación</h3>
             <p>Horario semanal, clases y grupos</p>
@@ -324,7 +324,7 @@ function App() {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel app-home-panel">
         <div className="panel-header">
           <h2>Endpoints</h2>
           <p>Lo justo para validar la API.</p>
@@ -337,7 +337,7 @@ function App() {
         </ul>
       </section>
 
-      <section className="panel two-col">
+      <section className="panel two-col app-home-panel">
         <div>
           <div className="panel-header">
             <h2>Estado / Respuesta</h2>

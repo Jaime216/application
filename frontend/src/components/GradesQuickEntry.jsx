@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const defaultApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -47,10 +47,15 @@ export default function GradesQuickEntry({
   const [undoState, setUndoState] = useState(null);
   const deletionTimerRef = useRef(null);
 
+  const pendingExams = useMemo(
+    () => (exams || []).filter((exam) => exam?.score === null || exam?.score === undefined),
+    [exams],
+  );
+
   useEffect(() => {
-    setRows(exams || []);
+    setRows(pendingExams);
     const initialDates = {};
-    (exams || []).forEach((exam) => {
+    pendingExams.forEach((exam) => {
       const id = getExamId(exam);
       if (exam?.date) {
         try {
@@ -63,7 +68,7 @@ export default function GradesQuickEntry({
       }
     });
     setDateDrafts(initialDates);
-  }, [exams]);
+  }, [exams, pendingExams]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -143,8 +148,20 @@ export default function GradesQuickEntry({
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload?.error || 'No se pudo guardar la nota');
       }
+      const body = await response.json().catch(() => ({}));
 
-      setRows((current) => current.filter((row) => getExamId(row) !== examId));
+      // If backend indicates the exam was moved to completed, remove it.
+      if (body.movedToCompleted) {
+        setRows((current) => current.filter((row) => getExamId(row) !== examId));
+        if (onDeleted) onDeleted(examId);
+      } else {
+        // Update the exam in-place with returned exam
+        if (body.exam) {
+          setRows((current) => current.map((row) => (getExamId(row) === examId ? body.exam : row)));
+        } else {
+          setRows((current) => current.filter((row) => getExamId(row) !== examId));
+        }
+      }
       setDraftScores((current) => {
         const next = { ...current };
         delete next[examId];
@@ -153,7 +170,7 @@ export default function GradesQuickEntry({
       setToast('Nota guardada correctamente');
 
       if (onSaved) {
-        onSaved(examId, parsedScore);
+        onSaved(examId, parsedScore, body.movedToCompleted === true, 'score');
       }
     } catch (err) {
       setError(err.message || 'Error al guardar la nota');
@@ -286,7 +303,7 @@ export default function GradesQuickEntry({
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div className="grade-date-row">
                         <input
                           type="date"
                           value={dateDrafts[examId] ?? ''}
@@ -311,7 +328,12 @@ export default function GradesQuickEntry({
                                 throw new Error(p?.error || 'No se pudo guardar la fecha');
                               }
                               const body = await res.json();
-                              setRows((current) => current.map((r) => (getExamId(r) === examId ? body.exam : r)));
+                              if (body.movedToCompleted) {
+                                setRows((current) => current.filter((r) => getExamId(r) !== examId));
+                                if (onDeleted) onDeleted(examId);
+                              } else if (body.exam) {
+                                setRows((current) => current.map((r) => (getExamId(r) === examId ? body.exam : r)));
+                              }
                               setToast('Fecha guardada');
                             } catch (err) {
                               setError(err.message || 'Error guardando fecha');

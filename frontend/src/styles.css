@@ -92,6 +92,59 @@ pre {
   padding: 1.5rem;
 }
 
+.app-home-hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.app-home-hero .hero-topbar {
+  align-items: center;
+}
+
+.app-home-modules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+  margin-top: 1rem;
+}
+
+.app-home-modules .module-card {
+  max-width: none;
+  min-height: 132px;
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.app-home-modules .module-card:hover:not(.disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.app-home-modules .module-card h3,
+.app-home-modules .module-card p {
+  margin: 0;
+}
+
+.app-home-panel {
+  width: 100%;
+}
+
+.app-home-panel .endpoint-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.app-home-panel .endpoint-list li {
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .auth-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 420px);
@@ -187,9 +240,8 @@ h1 {
 }
 
 .modules-row {
-  display: flex;
+  display: grid;
   gap: 0.8rem;
-  margin-top: 1rem;
 }
 
 .module-card {
@@ -197,13 +249,114 @@ h1 {
   border: 1px solid var(--line);
   padding: 1rem;
   border-radius: 12px;
-  width: 220px;
+  width: 100%;
+  max-width: 240px;
   cursor: pointer;
+}
+
+.education-hub-dashboard {
+  display: flex;
+  justify-content: center;
+}
+
+.education-hub-dashboard > .panel {
+  width: min(100%, 1120px);
+}
+
+.education-hub-modules {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .module-card.disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.schedule-table {
+  margin: 0 -0.35rem;
+}
+
+.schedule-table thead th {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding-bottom: 0.4rem;
+}
+
+.schedule-table tbody td {
+  min-width: 120px;
+  vertical-align: top;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.schedule-table tbody tr td:first-child {
+  min-width: 110px;
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.schedule-table tbody tr td:first-child strong {
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+.schedule-table tbody tr td:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.schedule-panel .schedule-save-button,
+.schedule-panel .schedule-row-button,
+.schedule-panel .schedule-inline-button {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.schedule-panel .schedule-save-button {
+  padding: 0.72rem 1rem;
+}
+
+.schedule-panel .schedule-row-button {
+  padding: 0.45rem 0.7rem;
+  margin-right: 0.35rem;
+}
+
+.schedule-panel .schedule-inline-button {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.schedule-panel .schedule-add-button {
+  color: var(--accent-2);
+}
+
+.schedule-panel .schedule-remove-button {
+  color: var(--danger);
+}
+
+.schedule-panel .schedule-save-button:hover,
+.schedule-panel .schedule-row-button:hover,
+.schedule-panel .schedule-inline-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.schedule-panel .schedule-row-button:disabled,
+.schedule-panel .schedule-inline-button:disabled,
+.schedule-panel .schedule-save-button:disabled {
+  opacity: 0.55;
 }
 
 .slot-box .class-item {
@@ -413,6 +566,57 @@ h1 {
   gap: 0.45rem;
 }
 
+.grade-date-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.grade-date-row input[type='date'] {
+  min-width: 148px;
+}
+
+.grade-date-row button {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+.subject-picker-panel {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.8rem 0.9rem;
+  margin: 0.9rem 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.subject-picker-panel label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.subject-picker-select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.subject-picker-select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .grade-input-row {
   display: flex;
   align-items: center;
@@ -433,6 +637,59 @@ h1 {
   display: grid;
   gap: 0.45rem;
   max-width: 520px;
+}
+
+.create-task-form,
+.create-exam-form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.create-task-form label,
+.create-exam-form label {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.create-task-form input,
+.create-task-form select,
+.create-exam-form input,
+.create-exam-form select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.create-task-form input:focus,
+.create-task-form select:focus,
+.create-exam-form input:focus,
+.create-exam-form select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+.create-task-form button[type='submit'],
+.create-exam-form button[type='submit'] {
+  justify-self: end;
+  margin-top: 0.35rem;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+}
+
+.create-task-form .notice,
+.create-exam-form .notice,
+.create-task-form .field-error,
+.create-exam-form .field-error,
+.create-task-form .field-success,
+.create-exam-form .field-success {
+  margin: 0;
 }
 
 .create-task-form label {
@@ -571,6 +828,91 @@ h1 {
   display: grid;
   gap: 0.8rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.exam-history-list {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.exam-history-item {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.exam-history-item.clickable {
+  cursor: pointer;
+}
+
+.exam-history-item.clickable:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.exam-history-item.clickable:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.18);
+  outline-offset: 2px;
+}
+
+.exam-history-item.editing {
+  cursor: default;
+}
+
+.exam-history-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  color: var(--muted);
+}
+
+.exam-history-main strong {
+  color: var(--text);
+}
+
+.exam-history-edit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.exam-history-edit label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.exam-history-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.subtle-button {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  padding: 0.15rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.subtle-button:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.subtle-button:disabled {
+  opacity: 0.5;
+  text-decoration: none;
 }
 
 .dashboard-header-row {

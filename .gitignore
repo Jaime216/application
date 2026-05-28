@@ -46,8 +46,6 @@ temp/
 *.pid.lock
 
 # DataBase
-*.sqlite
-*.sqlite3
-db.db
-db.db-shm
-db.db-wal
+database/
+
+spa-app-local*
